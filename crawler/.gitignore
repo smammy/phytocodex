@@ -1,5 +1,2 @@
-*-item-pages
-*-list
-*-list-lastpage
-*-list-pages
-*.stamp
+/list
+/pagecache/

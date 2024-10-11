@@ -5,14 +5,13 @@ curl = curl \
     --proxy 'http://localhost:3128' \
     --user-agent 'Phytocodexbot/1 (sam+phyt@porcupine.club)' \
     --retry 1 \
-    --no-progress-meter \
-    --write-out '%{stderr}%{url}\t%{filename_effective}\n'
+    --no-progress-meter
 
-all-item-pages = $(foreach c,$(collections),$(c)-item-pages)
-all-lists = $(foreach c,$(collections),$(c)-list)
-all-list-pages = $(foreach c,$(collections),$(c)-list-pages)
+#     \
+#    --write-out '%{stderr}%{url}\t%{filename_effective}\n'
 
 .DELETE_ON_ERROR:
+.NOTINTERMEDIATE: $(collections:%=pagecache/list/%.last)
 
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
 # parse all item pages and load into database
@@ -20,57 +19,39 @@ all-list-pages = $(foreach c,$(collections),$(c)-list-pages)
 .PHONY: db
 db: db.stamp
 
-db.stamp: $(all-item-pages)
-	find $^ -type f | phyt-db-load --go-hard --prune @-
+db.stamp: pagecache/item/item.stamp
+	find pagecache/item -type f | phyt-db-load --go-hard --prune @-
 	touch $@
 
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
-# download the item pages for all items
+# download all item pages
 
-.PHONY: all-item-pages
-all-item-pages: $(all-item-pages)
-
-.PHONY: $(all-item-pages)
-$(all-item-pages): %-item-pages: %-item-pages.stamp
-
-%-item-pages.stamp: %-list
+pagecache/item/.stamp: list
 	< $< xargs -I{} printf '%s=%s\n' url $(mgurl)/{} output {}.html \
 	| $(curl) \
-	    --output-dir $(@:%.stamp=%) \
+	    --output-dir $(@D) \
 	    --create-dirs \
 	    --remove-on-error \
 	    --config -
 	touch $@
 
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
-# extract the item paths for all categories' list pages
+# extract the item paths from all categories' list pages
 
-list: $(all-lists)
-	sort --merge $^ > $@
-
-.PHONY: all-lists
-all-lists: $(all-lists)
-
-$(all-lists): %-list: %-list-pages.stamp
-	find $(<:%.stamp=%) -type f \
+list: $(collections:%=pagecache/list/%.listpages)
+	find $(^:%.listpages=%) -type f \
 	| phyt-extract-paths \
 	| sed 's|^/||' \
 	| sort \
 	> $@
 
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
-# fetch all pages of each collection's "all" list
+# fetch all pages of a collection's item list
 
-.PHONY: all-list-pages
-all-list-pages: $(all-list-pages)
-
-.PHONY: $(all-list-pages)
-$(all-list-pages): %-list-pages: %-list-pages.stamp
-
-%-list-pages.stamp: %-list-lastpage
+%.listpages: %.lastpage
 	$(curl) \
 	    --variable lastpage@$< \
-	    --output-dir $(@:%.stamp=%) \
+	    --output-dir $* \
 	    --create-dirs \
 	    --output '#1.html' \
 	    --remove-on-error \
@@ -80,7 +61,7 @@ $(all-list-pages): %-list-pages: %-list-pages.stamp
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
 # determine the index of the last page of each collection
 
-.NOTINTERMEDIATE: *-list-lastpage
-%-list-lastpage:
+%.lastpage:
+	mkdir -p $(@D)
 	$(curl) '$(mgurl)/$(*F)/all' | phyt-extract-last-page > $@
 	@printf 'Collection “%s” has %s list pages.\n' $(*F) $$(( $$(cat $@) + 1 ))
