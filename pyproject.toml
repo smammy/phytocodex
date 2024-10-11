@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Phytocodex"
+dynamic = ["version"]
+dependencies = [
+    "beautifulsoup4",
+    "html2text",
+    "lxml",
+    "psycopg[binary]",
+]
+authors = [
+  { name="Sam Birch", email="sam+phyt@porcupine.club" },
+]
+description = "Your guide to the Macintosh Garden"
+readme = "README.txt"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: European Union Public Licence 1.2 (EUPL 1.2)",
+    "Natural Language :: English",
+    "Topic :: Internet :: Gopher",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
+
+[project.scripts]
+phyt-db-load = "phytocodex.db.loader:main"
+phyt-extract-last-page = "phytocodex.util.lastpageextractor:main"
+phyt-extract-paths = "phytocodex.util.pathextractor:main"
+phyt-serve-gopher = "phytocodex.gopher.server:main"
