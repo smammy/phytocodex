@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+from socketserver import StreamRequestHandler
 import logging
 import re
 
 import psycopg
 
 from .data import logo, logo2, textfiles
-from .menuentity import MenuEntity as Ent
+from .menuentity import GopherEntity as Ent
 from ..config import PGURL
 
 

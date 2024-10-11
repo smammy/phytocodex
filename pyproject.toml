@@ -10,6 +10,7 @@ dependencies = [
     "html2text",
     "lxml",
     "psycopg[binary]",
+    "systemd-python",
 ]
 authors = [
   { name="Sam Birch", email="sam+phyt@porcupine.club" },

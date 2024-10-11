@@ -1,4 +1,4 @@
-from urllib.parse mport urlparse
+from urllib.parse import urlparse
 import os
 import unicodedata
 
