@@ -6,7 +6,7 @@ import re
 
 import psycopg
 
-from .data import logo, logo2, textfiles
+from .data import logo, logo2, ftpserver, textfiles
 from .menuentity import GopherEntity as Ent
 from ..config import PGURL
 
@@ -60,21 +60,14 @@ class GopherHandler(StreamRequestHandler):
             Ent.menu("Publishers", "/publisher"),
             Ent.search("Search", "/search"),
             Ent.url_link(
-                "Macintosh Garden on the WWW (URL link)",
+                "Macintosh Garden on the WWW",
                 "http://macintoshgarden.org/",
             ),
-            Ent.getslash_link(
-                "Macintosh Garden on the WWW ('GET /' pseudo-selector)",
-                "http://macintoshgarden.org/",
-            ),
-            Ent.info("Macintosh Garden FTP server:"),
-            Ent.info("  Host:     repo1.macintoshgarden.org"),
-            Ent.info("  Login:    macgarden"),
-            Ent.info("  Password: publicdl"),
             Ent.url_link(
-                "Macintosh Garden FTP server (URL link)",
-                "ftp://macgarden:publicdl@repo1.macintoshgarden.org/",
+                "Macintosh Garden FTP server",
+                "ftp://macgarden:publicdl@repo1.macintoshgarden.org/Garden/",
             ),
+            *[Ent.info(line) for line in ftpserver.splitlines()],
         ])
     
     def show_textfile(self, textfile):
@@ -169,8 +162,9 @@ class GopherHandler(StreamRequestHandler):
     def search(self, query):
         self.cur.execute("""
             SELECT path, name
-            FROM item
-            WHERE document @@ websearch_to_tsquery(%(query)s)
+            FROM item, websearch_to_tsquery(%(query)s) AS query
+            WHERE document @@ query
+            ORDER BY ts_rank_cd(document, query, 2) DESC
             LIMIT 100;
         """, dict(query=query))
         
@@ -184,11 +178,7 @@ class GopherHandler(StreamRequestHandler):
             Ent.menu(f"{item.name} Downloads", f"{item.path}/downloads"),
             Ent.text(f"{item.name} Checksums", f"{item.path}.md5"),
             Ent.url_link(
-                f"WWW Page for {item.name} (URL link)",
-                f"http://macintoshgarden.org/{item.path}",
-            ),
-            Ent.getslash_link(
-                f"WWW Page for {item.name} ('GET /' pseudo-selector)",
+                f"WWW Page for {item.name}",
                 f"http://macintoshgarden.org/{item.path}",
             ),
         ])
@@ -215,7 +205,7 @@ class GopherHandler(StreamRequestHandler):
                 "macintoshgarden.org", "80",
             ))
             self.writeend()
-        
+    
     def show_checksums(self, collection, item):
         path = f"/{collection}/{item}"
         self.cur.execute("""
