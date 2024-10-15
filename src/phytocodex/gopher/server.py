@@ -25,6 +25,7 @@ def main():
     with SocketActivatedTCPServer(
         None, GopherHandler, socket_fd=systemd.daemon.listen_fds()[0]
     ) as server:
+        systemd.daemon.notify("READY=1")
         server.serve_forever()
 
 
