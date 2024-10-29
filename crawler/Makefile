@@ -5,9 +5,8 @@ curl = curl \
     --proxy 'http://localhost:3128' \
     --user-agent 'Phytocodexbot/1 (sam+phyt@porcupine.club)' \
     --retry 1 \
-    --no-progress-meter
-
-#     \
+    --silent
+#    --no-progress-meter
 #    --write-out '%{stderr}%{url}\t%{filename_effective}\n'
 
 .DELETE_ON_ERROR:
@@ -20,30 +19,46 @@ curl = curl \
 db: db.stamp
 
 db.stamp: pagecache/item/item.stamp
-	find pagecache/item -type f | phyt-db-load --go-hard --prune @-
+	find pagecache/item -type f -name '*.html' \
+	| phyt-db-load \
+	    --go-hard \
+	    --prune \
+	    @-
 	touch $@
 
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
 # download all item pages
 
-pagecache/item/.stamp: list
-	< $< xargs -I{} printf '%s=%s\n' url $(mgurl)/{} output {}.html \
-	| $(curl) \
+.PHONY: items
+include items.d
+
+pagecache/item/%.html:
+	@printf "Fetching %s ..." $*
+	@$(curl) \
 	    --output-dir $(@D) \
 	    --create-dirs \
+	    --output $(@F) \
 	    --remove-on-error \
-	    --config -
-	touch $@
+	    --url $(mgurl)/$*
+	@printf " ✓\n"
 
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
 # extract the item paths from all categories' list pages
 
-list: $(collections:%=pagecache/list/%.listpages)
+.PHONY: list
+list: item.list
+
+items.d: item.list
+	xargs -a $< -d '\n' -r printf "items: pagecache/item/%s.html\n" > $@
+
+item.list item.count &: $(collections:%=pagecache/list/%.listpages)
 	find $(^:%.listpages=%) -type f \
 	| phyt-extract-paths \
 	| sed 's|^/||' \
-	| sort \
-	> $@
+	| sort -u \
+	| tee item.list \
+	| wc -l \
+	> item.count
 
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
 # fetch all pages of a collection's item list
