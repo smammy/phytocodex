@@ -1,6 +1,9 @@
 CREATE TABLE dbmeta (
     id integer PRIMARY KEY DEFAULT 0 CHECK (id = 0),
-    generation integer NOT NULL DEFAULT 0
+    generation integer NOT NULL DEFAULT 0,
+    lastupdate timestamp with time zone NOT NULL DEFAULT '1904-01-01T00:00:00',
+    list_size integer NOT NULL DEFAULT 0,
+    items_crawled integer NOT NULL DEFAULT 0
 );
 
 INSERT INTO dbmeta DEFAULT VALUES;

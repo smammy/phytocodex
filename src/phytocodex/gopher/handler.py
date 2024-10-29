@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+from pathlib import Path
 from socketserver import StreamRequestHandler
 import logging
 import re
 
 import psycopg
 
-from .data import logo, logo2, ftpserver, textfiles
+from .data import logo, logo2, ftpserver, stats, textfiles
 from .menuentity import GopherEntity as Ent
 from ..config import PGURL
 
@@ -47,6 +48,8 @@ class GopherHandler(StreamRequestHandler):
                 self.browse_item(coll, item, extra)
             case ["search"]:
                 self.search(query)
+            case ["stats"]:
+                self.show_stats()
             case [*_]:
                 self.not_found()
     
@@ -59,6 +62,7 @@ class GopherHandler(StreamRequestHandler):
             Ent.menu("Authors", "/author"),
             Ent.menu("Publishers", "/publisher"),
             Ent.search("Search", "/search"),
+            Ent.text("Crawler & Database Statistics", "/stats"),
             Ent.url_link(
                 "Macintosh Garden on the WWW",
                 "http://macintoshgarden.org/",
@@ -87,7 +91,7 @@ class GopherHandler(StreamRequestHandler):
         catpath = "".join(f"/{part}" for part in parts)
         catpattern = f"{catpath}/[^/]+"
         
-        self.cur.execute(f"""
+        self.cur.execute("""
             (
                 SELECT
                     1 AS sortorder, '1' AS itemtype,
@@ -220,6 +224,22 @@ class GopherHandler(StreamRequestHandler):
             ]))
         self.wfile.write(b".\r\n")
     
+    def show_stats(self):
+        self.cur.execute("""
+            SELECT
+                (SELECT list_size FROM dbmeta),
+                (SELECT items_crawled FROM dbmeta),
+                (SELECT generation FROM dbmeta),
+                (SELECT lastupdate FROM dbmeta),
+                (SELECT count(*) FROM item) AS item_count,
+                (SELECT count(*) FROM category) AS category_count,
+                (SELECT count(DISTINCT author_path) FROM item_author) AS author_count,
+                (SELECT count(DISTINCT author_path) FROM item_publisher) AS publisher_count,
+                (SELECT count(*) FROM download) AS download_count
+        """)
+        
+        self.writetext(stats.format_map(self.cur.fetchone()._asdict()))
+
     def writeent(self, entity):
         self.wfile.write(bytes(entity))
     

@@ -35,6 +35,23 @@ ftpserver = r"""
   Password: publicdl
 """[1:-1]
 
+stats = r"""
+Crawler Stats
+-------------
+Items found   : {list_size}
+Items crawled : {items_crawled}
+
+Database Stats
+--------------
+Generation    : {generation}
+Last update   : {lastupdate}
+Items         : {item_count}
+Categories    : {category_count}
+Authors       : {author_count}
+Publishers    : {publisher_count}
+Downloads     : {download_count}
+"""[1:-1]
+
 textfiles = dict(
     about=r"""
 Phytocodex is an independent index of the apps and games in the

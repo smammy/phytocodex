@@ -18,9 +18,10 @@ curl = curl \
 .PHONY: db
 db: db.stamp
 
-db.stamp: pagecache/item/item.stamp
+db.stamp: item.count pagecache/item/.stamp
 	find pagecache/item -type f -name '*.html' \
 	| phyt-db-load \
+	    --stat-list-size $(file < $<) \
 	    --go-hard \
 	    --prune \
 	    @-

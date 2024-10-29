@@ -2,6 +2,8 @@
 
 from argparse import ArgumentParser
 from collections import namedtuple
+from datetime import datetime
+from pathlib import Path
 from textwrap import TextWrapper
 from urllib.parse import urlparse, urljoin
 import json
@@ -20,11 +22,14 @@ wsrun = re.compile(r"\s+")
 vsrun = re.compile(r"[\n\v\f\r\u0085\u2028\u2029]+")
 hsrun = re.compile(r"[^\S\n\v\f\r\u0085\u2028\u2029]+")
 
+stats_columns = {"list_size", "items_crawled"}
+
 
 def main():
     global opts
     
     parser = ArgumentParser()
+    parser.add_argument('--stat-list-size', type=int)
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--go-hard', action='store_true')
@@ -33,14 +38,17 @@ def main():
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('paths', metavar='FILE', nargs="+")
     opts = parser.parse_args()
+    stats = dict((k[5:], v) for (k, v) in vars(opts).items() if k[:5]=="stat_")
     
     with psycopg.connect(PGURL) as conn:
         with conn.cursor() as cur:
             bump_generation(cur)
             
+            crawled = 0
             failures = 0
             
             for path in gen_paths(opts.paths, sys.stdin):
+                crawled += 1
                 if opts.verbose:
                     eprint(f"Processing {path}...")
                 succeeded = process_path(cur, path)
@@ -62,6 +70,9 @@ def main():
                 raise Rollback
             elif opts.prune:
                 prune_database(cur)
+            
+            stats["items_crawled"] = crawled
+            update_stats(cur, stats)
 
 
 def gen_paths(args, stdin):
@@ -228,7 +239,7 @@ def extract_download(soup):
 def bump_generation(cur):
     maybe_execute(cur, """
         UPDATE dbmeta
-        SET generation=generation+1
+        SET generation=generation+1, lastupdate=now()
         RETURNING generation;
     """)
     
@@ -238,6 +249,17 @@ def bump_generation(cur):
         else:
             generation = cur.fetchone()[0]
             eprint(f"Incremented generation to {generation}.")
+
+
+def update_stats(cur, stats):
+    for col, val in stats.items():
+        if col in stats_columns:
+            maybe_execute(cur, f"UPDATE dbmeta SET {col}=%s", (val,))
+            if opts.verbose:
+                if opts.dry_run:
+                    eprint(f"Would have set stat {col} to {val}.")
+                else:
+                    eprint(f"Set stat {col} to {val}.")
 
 
 def insert_item(cur, item):
