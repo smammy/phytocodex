@@ -14,6 +14,7 @@ import traceback
 from bs4 import BeautifulSoup
 from html2text import HTML2Text
 from psycopg import Rollback
+from psycopg.sql import SQL, Identifier as SQLID
 import psycopg
 
 from ..config import PGURL, MGURL
@@ -251,17 +252,6 @@ def bump_generation(cur):
             eprint(f"Incremented generation to {generation}.")
 
 
-def update_stats(cur, stats):
-    for col, val in stats.items():
-        if col in stats_columns:
-            maybe_execute(cur, f"UPDATE dbmeta SET {col}=%s", (val,))
-            if opts.verbose:
-                if opts.dry_run:
-                    eprint(f"Would have set stat {col} to {val}.")
-                else:
-                    eprint(f"Set stat {col} to {val}.")
-
-
 def insert_item(cur, item):
     maybe_execute(cur, """
         INSERT INTO item (path, name, year, descr_html, descr_text)
@@ -273,23 +263,32 @@ def insert_item(cur, item):
 
 
 def insert_tag(cur, tag):
-    maybe_execute(cur, f"""
-        INSERT INTO {tag['_type']} (path, name)
+    type_table = tag['_type']
+    rel_table = f"item_{tag['_rel']}"
+    rel_column = f"{tag['_type']}_path"
+    
+    maybe_execute(cur, SQL("""
+        INSERT INTO {type_table} (path, name)
         VALUES (%(tagpath)s, %(tagname)s)
         ON CONFLICT (path) DO UPDATE
         SET generation=DEFAULT, name=%(tagname)s;
-    """, tag)
+    """).format(
+        type_table=SQLID(type_table),
+    ), tag)
     
-    maybe_execute(cur, f"""
-        INSERT INTO item_{tag['_rel']} (item_path, {tag['_type']}_path)
+    maybe_execute(cur, SQL("""
+        INSERT INTO {rel_table} (item_path, {rel_column})
         VALUES (%(itempath)s, %(tagpath)s)
-        ON CONFLICT (item_path, {tag['_type']}_path) DO UPDATE
+        ON CONFLICT (item_path, {rel_column}) DO UPDATE
         SET generation=DEFAULT;
-    """, tag)
+    """).format(
+        rel_table=SQLID(rel_table),
+        rel_column=SQLID(rel_column),
+    ), tag)
 
 
 def insert_download(cur, download):
-    maybe_execute(cur, f"""
+    maybe_execute(cur, """
         INSERT INTO download (item_path, number, name, size, md5)
         VALUES (%(itempath)s, %(number)s, %(name)s, %(size)s, %(md5)s)
         ON CONFLICT (item_path, number) DO UPDATE
@@ -302,10 +301,12 @@ def prune_database(cur):
         "download", "item_category", "item_author", "item_publisher",
         "item_sysver", "category", "author", "item",
     ]:
-        maybe_execute(cur, f"""
+        maybe_execute(cur, SQL("""
             DELETE FROM {table}
             WHERE generation < generation();
-        """, dict(table=table))
+        """).format(
+            table=SQLID(table),
+        ))
         
         if opts.verbose:
             if opts.dry_run:
@@ -313,6 +314,23 @@ def prune_database(cur):
             else:
                 rows = cur.rowcount
                 eprint(f'Pruned {rows} rows from "{table}".')
+
+
+def update_stats(cur, stats):
+    for col, val in stats.items():
+        if col in stats_columns:
+            maybe_execute(cur, SQL("""
+                UPDATE dbmeta
+                SET {col}=%(val)s;
+            """).format(
+                col=SQLID(col),
+            ), dict(val=val))
+            
+            if opts.verbose:
+                if opts.dry_run:
+                    eprint(f"Would have set stat {col} to {val}.")
+                else:
+                    eprint(f"Set stat {col} to {val}.")
 
 
 def eprint(*args, file=sys.stderr, **kwargs):
