@@ -23,6 +23,13 @@ wsrun = re.compile(r"\s+")
 vsrun = re.compile(r"[\n\v\f\r\u0085\u2028\u2029]+")
 hsrun = re.compile(r"[^\S\n\v\f\r\u0085\u2028\u2029]+")
 
+internal_hosts = {
+    "macintoshgarden.org",          # "[www].se"
+    "repo1.macintoshgarden.org",    # "[ftp].se"
+    "old.mac.gdn",                  # "[mirror].de"
+    "ftp.macintosh.garden",         # "[ftp].de"
+}
+
 stats_columns = {"list_size", "items_crawled"}
 
 
@@ -202,7 +209,7 @@ def extract_downloads(soup):
     
     for downloaddiv in soup.find_all("div", class_="download"):
         try:
-            downloads.append(extract_download(downloaddiv))
+            download = extract_download(downloaddiv)
         except Exception as ex:
             if opts.verbose:
                 eprint("\nOdd download, skipping it.\n")
@@ -210,12 +217,27 @@ def extract_downloads(soup):
                 if opts.debug:
                     eprint("\nHere it is:\n")
                     eprint(downloaddiv.prettify())
+        else:
+            if download is not None:
+                downloads.append(download)
     
     return downloads
 
 
 def extract_download(soup):
-    number = soup.find("div", class_="numeral").get_text()
+    number = soup.find("div", class_="numeral")
+    if number is None:
+        href = soup.find("a")["href"]
+        if href == "no":
+            return
+        elif urlparse(href).hostname not in {*internal_hosts, None}:
+            return
+        elif "purchase" in soup.get_text().lower():
+            return
+        else:
+            raise ValueError("No div.numeral but not a purchase link")
+    
+    number = number.get_text()
     assert number.startswith("#")
     
     atags = soup.find_all("a")
@@ -228,6 +250,8 @@ def extract_download(soup):
             break
         fileinfo += tag.get_text()
     name_and_size = re.match(r"(.*?) \((.*)\)", fix_space(fileinfo))
+    if name_and_size is None:
+        raise ValueError("Missing file name or file size")
     
     return dict(
         number=fix_space(number[1:]),
