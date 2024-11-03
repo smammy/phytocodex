@@ -28,13 +28,6 @@ logo2 = r"""
 (_/             ..-._)
 """[1:-1]
 
-ftpserver = r"""
-  Host:     repo1.macintoshgarden.org
-  Path:     /Garden/
-  Login:    macgarden
-  Password: publicdl
-"""[1:-1]
-
 stats = r"""
 Crawler Stats
 -------------
@@ -102,4 +95,17 @@ Future work:
 
 Please send feedback to sam+phyt@porcupine.club. Thanks!
 """[1:-1],
+    ftpserver=r"""
+Host:     repo1.macintoshgarden.org
+Path:     /Garden/
+Login:    macgarden
+Password: publicdl
+
+Connect using any normal FTP client. Note that downloads for all items
+in each collection (apps, games) are in a single directory. Those
+directories are quite large (tens of thousands of files) and an old
+Mac may choke on the listings. It might help to use a client that
+allows you to enter the path to a file directly, to save the
+aggravation of loading the directory listing.
+"""[1:-1]
 )

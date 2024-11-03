@@ -7,7 +7,7 @@ import re
 
 import psycopg
 
-from .data import logo, logo2, ftpserver, stats, textfiles
+from .data import logo, logo2, stats, textfiles
 from .menuentity import GopherEntity as Ent
 from ..config import PGURL
 
@@ -71,7 +71,7 @@ class GopherHandler(StreamRequestHandler):
                 "Macintosh Garden FTP server",
                 "ftp://macgarden:publicdl@repo1.macintoshgarden.org/Garden/",
             ),
-            *[Ent.info(line) for line in ftpserver.splitlines()],
+            Ent.text("FTP server login info", "/ftpserver.txt"),
         ])
     
     def show_textfile(self, textfile):
