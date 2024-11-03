@@ -10,7 +10,7 @@ curl = curl \
 #    --write-out '%{stderr}%{url}\t%{filename_effective}\n'
 
 .DELETE_ON_ERROR:
-.NOTINTERMEDIATE: $(collections:%=pagecache/list/%.last)
+.NOTINTERMEDIATE: $(collections:%=pagecache/list/%.lastpage)
 
 # ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ #
 # parse all item pages and load into database
@@ -31,7 +31,16 @@ db.stamp: item.count pagecache/item/.stamp
 # download all item pages
 
 .PHONY: items
+items: pagecache/item/.stamp
+
+items.d: item.list
+	xargs -a $< -d '\n' -r \
+	    printf "pagecache/item/.stamp: pagecache/item/%s.html\n" > $@
+
 include items.d
+
+pagecache/item/.stamp:
+	touch $@
 
 pagecache/item/%.html:
 	@printf "Fetching %s ..." $*
@@ -48,9 +57,6 @@ pagecache/item/%.html:
 
 .PHONY: list
 list: item.list
-
-items.d: item.list
-	xargs -a $< -d '\n' -r printf "items: pagecache/item/%s.html\n" > $@
 
 item.list item.count &: $(collections:%=pagecache/list/%.listpages)
 	find $(^:%.listpages=%) -type f \
