@@ -38,18 +38,18 @@ ftpserver = r"""
 stats = r"""
 Crawler Stats
 -------------
-Items found   : {list_size}
-Items crawled : {items_crawled}
+Items found   : {dbmeta.list_size}
+Items crawled : {dbmeta.items_crawled}
 
 Database Stats
 --------------
-Generation    : {generation}
-Last update   : {lastupdate}
-Items         : {item_count}
-Categories    : {category_count}
-Authors       : {author_count}
-Publishers    : {publisher_count}
-Downloads     : {download_count}
+Generation    : {dbmeta.generation}
+Last update   : {dbmeta.lastupdate}
+Items         : {counts.item}
+Categories    : {counts.category}
+Authors       : {counts.author}
+Publishers    : {counts.publisher}
+Downloads     : {counts.download}
 """[1:-1]
 
 textfiles = dict(

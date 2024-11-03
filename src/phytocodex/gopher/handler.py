@@ -225,20 +225,20 @@ class GopherHandler(StreamRequestHandler):
         self.wfile.write(b".\r\n")
     
     def show_stats(self):
-        self.cur.execute("""
-            SELECT
-                (SELECT list_size FROM dbmeta),
-                (SELECT items_crawled FROM dbmeta),
-                (SELECT generation FROM dbmeta),
-                (SELECT lastupdate FROM dbmeta),
-                (SELECT count(*) FROM item) AS item_count,
-                (SELECT count(*) FROM category) AS category_count,
-                (SELECT count(DISTINCT author_path) FROM item_author) AS author_count,
-                (SELECT count(DISTINCT author_path) FROM item_publisher) AS publisher_count,
-                (SELECT count(*) FROM download) AS download_count
-        """)
+        dbmeta = self.cur.execute("""
+            SELECT list_size, items_crawled, generation, lastupdate FROM dbmeta
+        """).fetchone()
         
-        self.writetext(stats.format_map(self.cur.fetchone()._asdict()))
+        counts = self.cur.execute("""
+            SELECT
+                (SELECT count(*) FROM item) AS item,
+                (SELECT count(*) FROM category) AS category,
+                (SELECT count(DISTINCT author_path) FROM item_author) AS author,
+                (SELECT count(DISTINCT author_path) FROM item_publisher) AS publisher,
+                (SELECT count(*) FROM download) AS download
+        """).fetchone()
+        
+        self.writetext(stats.format(dbmeta=dbmeta, counts=counts))
 
     def writeent(self, entity):
         self.wfile.write(bytes(entity))
