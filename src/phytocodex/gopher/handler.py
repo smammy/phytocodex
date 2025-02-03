@@ -27,7 +27,6 @@ class GopherHandler(StreamRequestHandler):
             case [selector]:
                 query = None
         selector = selector.decode("ascii")
-        logging.debug(f"selector: “{selector}”")
         parts = [x for x in selector.split('/') if x != ""]
         logging.debug(f"parts: “{parts}”")
         assert all(re.fullmatch(r"[-.0-9A-Z_a-z]+", part) for part in parts)
