@@ -207,7 +207,6 @@ class GopherHandler(StreamRequestHandler):
                 f"GET /sites/macintoshgarden.org/files/{dldir}/{dl.name}",
                 "macintoshgarden.org", "80",
             ))
-            self.writeend()
     
     def show_checksums(self, collection, item):
         path = f"/{collection}/{item}"
