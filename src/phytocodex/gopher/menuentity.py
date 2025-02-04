@@ -22,6 +22,10 @@ class GopherEntity:
         return cls("1", *args, **kwargs)
     
     @classmethod
+    def binhex(cls, *args, **kwargs):
+        return cls("4", *args, **kwargs)
+    
+    @classmethod
     def search(cls, *args, **kwargs):
         return cls("7", *args, **kwargs)
     

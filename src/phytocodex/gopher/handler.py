@@ -4,8 +4,10 @@ from pathlib import Path
 from socketserver import StreamRequestHandler
 import logging
 import re
+import sys
 
 import psycopg
+import requests
 
 from .data import logo, logo2, stats, textfiles
 from .menuentity import GopherEntity as Ent
@@ -161,6 +163,8 @@ class GopherHandler(StreamRequestHandler):
                 self.writedownloads(item)
             case ["downloads", other] if other.endswith(".md5"):
                 self.writemd5file(item, other.removesuffix(".md5"))
+            case ["dlproxy", dlnum, *_]:
+                self.proxydownload(item, dlnum)
     
     def search(self, query):
         self.cur.execute("""
@@ -200,6 +204,7 @@ class GopherHandler(StreamRequestHandler):
             FROM download WHERE item_path=%(path)s
         """, dict(path=item.path))
         
+        self.writeent(Ent.info("Direct HTTP (pseudo-selector) downloads:"))
         for dl in self.cur:
             dldir = item.path.split('/')[1]
             self.writeent(Ent.binary(
@@ -207,6 +212,18 @@ class GopherHandler(StreamRequestHandler):
                 f"GET /sites/macintoshgarden.org/files/{dldir}/{dl.name}",
                 "macintoshgarden.org", "80",
             ))
+        
+        self.cur.scroll(0, "absolute")
+        
+        self.writeent(Ent.info("Proxied downloads via Gopher:"))
+        for dl in self.cur:
+            ent = Ent.binhex if dl.name.endswith(".hqx") else Ent.binary
+            self.writeent(ent(
+                f"DL#{dl.number} {dl.name} ({dl.size})",
+                f"{item.path}/dlproxy/{dl.number}/{dl.name}",
+            ))
+        
+        self.writeend()
     
     def show_checksums(self, collection, item):
         path = f"/{collection}/{item}"
@@ -221,6 +238,23 @@ class GopherHandler(StreamRequestHandler):
                 dl.name.encode("ascii"), b"\r\n",
             ]))
         self.wfile.write(b".\r\n")
+    
+    def proxydownload(self, item, dlnum):
+        dl = self.cur.execute("""
+            SELECT number, name, size, md5
+            FROM download WHERE item_path=%(path)s AND number=%(number)s
+        """, dict(path=item.path, number=dlnum)).fetchone()
+        
+        dldir = item.path.split('/')[1]
+        res = requests.get(
+            f"http://download.macintoshgarden.org/{dldir}/{dl.name}",
+            headers={
+                "user-agent": "Phytocodexproxy/2 (sam+phyt@porcupine.club)"
+            },
+            stream=True
+        )
+        for chunk in res.iter_content(chunk_size=None):
+            self.wfile.write(chunk)
     
     def show_stats(self):
         dbmeta = self.cur.execute("""

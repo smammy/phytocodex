@@ -22,8 +22,9 @@ class SocketActivatedTCPServer(SocketActivatedServer, TCPServer):
 
 def main():
     logging.basicConfig(level=LOGLEVEL)
+    fds = systemd.daemon.listen_fds()
     with SocketActivatedTCPServer(
-        None, GopherHandler, socket_fd=systemd.daemon.listen_fds()[0]
+        None, GopherHandler, socket_fd=fds[0]
     ) as server:
         systemd.daemon.notify("READY=1")
         server.serve_forever()
