@@ -61,35 +61,55 @@ text, "OR", and "-" are recognized. Your query is matched against the
 path, name, year and description of each item in the garden. At most
 100 results are returned.
 
+There are two sets of download links for every item: the first set use
+the unofficial "GET /" selector to directly link to the Garden via
+HTTP. Some Gopher clients understand this syntax, and some don't.
+Unfortunately, TurboGopher for System 6 is one that doesn't.
+
+The second set of download links uses a local HTTP-to-Gopher proxy to
+deliver files over the Gopher protocol. This should work with any
+Gopher client that supports the 
+
 The download links use the unofficial "GET /" selector to directly
 link to the Macintosh Garden via HTTP. Some Gopher clients understand
 this syntax, and some don't. TurboGopher for System 6 is one that
 doesn't: you'll have to use Fetch to connect to the Macintosh Garden
 FTP site, and find the file manually.
 
-Some known issues are:
+Please send feedback to sam+phyt@porcupine.club. Thanks!
+
+Known Issues
 
   * Character encoding for non-ASCII characters is messed up in some
     situations. You may see odd glyphs.
 
   * The search result ranking function could be better.
 
-Future work:
+Future Work
 
   * Match search terms against an item's categories, authors,
     publishers, and download file names. Add syntax for searching a
     particular field.
 
   * Figure out a way to deliver a download seamlessly on TurboGopher
-    on System 6 (without proxying downloads through Phytocodex), or at
+    on System 6 without proxying downloads through Phytocodex. Or at
     least find some way that doesn't require manually pawing through
     the FTP site.
 
-  * Show the date and time the index was last updated from the Garden.
-    Automate updates. (Maybe read the "recent changes" page to detect
-    new items, but what about edits to existing items?)
+  * Automate updates.
 
-Please send feedback to sam+phyt@porcupine.club. Thanks!
+History
+
+v1.1, 2024-02-04
+
+  * Added download proxy for Gopher clients that don't support
+    "GET /" pseudo-selectors for HTTP.
+  * Rewrote the crawler as a Python script rather than a big ball of
+    fighting animals held together with a makefile.
+  * Added a handler for nonexistent selectors.
+  * Fixed a bug that prevented display of all but the first download
+    for an item.
+
 """[1:-1],
     ftpserver=r"""
 Host:     repo1.macintoshgarden.org
