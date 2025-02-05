@@ -271,6 +271,9 @@ class GopherHandler(StreamRequestHandler):
         """).fetchone()
         
         self.writetext(stats.format(dbmeta=dbmeta, counts=counts))
+    
+    def not_found(self):
+        self.writetext("That selector doesn't exist!")
 
     def writeent(self, entity):
         self.wfile.write(bytes(entity))

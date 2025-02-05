@@ -72,10 +72,6 @@ Some known issues are:
   * Character encoding for non-ASCII characters is messed up in some
     situations. You may see odd glyphs.
 
-  * There's no "selector not found" handler, so if you request a
-    nonexistent selector, you'll see a blank screen or the screen
-    won't change, depending on your client.
-
   * The search result ranking function could be better.
 
 Future work:
