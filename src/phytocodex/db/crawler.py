@@ -8,15 +8,9 @@ from requests import Request
 from requests.adapters import HTTPAdapter
 from requests_cache import CachedSession
 from urllib3 import Retry
-# from urlstd.parse import URL as URLBase
 import sys
 
 retry_on_status = Retry.RETRY_AFTER_STATUS_CODES | set([500, 502, 503, 504])
-
-
-# class URL(URLBase):
-#     def __init__(self, url, base="http://macintoshgarden.org/"):
-#         super().__init__(url, base)
 
 
 def main():
