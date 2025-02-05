@@ -35,3 +35,6 @@ phyt-db-load = "phytocodex.db.loader:main"
 phyt-extract-last-page = "phytocodex.util.lastpageextractor:main"
 phyt-extract-paths = "phytocodex.util.pathextractor:main"
 phyt-serve-gopher = "phytocodex.gopher.server:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "phytocodex.__version__" }
