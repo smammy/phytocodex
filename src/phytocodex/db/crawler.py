@@ -19,32 +19,43 @@ def main():
     global session
     
     parser = ArgumentParser()
-    parser.add_argument("-d", "--item-dir",
+    parser.add_argument("--item-dir",
+        metavar="DIR",
         type=Path,
         default=Path("items"),
+        help="destination for fetched item pages",
+    )
+    parser.add_argument("--write-count",
+        action="store_true",
+        help="write item count to DIR/.count",
     )
     parser.add_argument("--user-agent",
+        metavar="STRING",
         default="Phytocodexbot/2 (sam+phyt@porcupine.club)",
+        help="value for user-agent header in requests",
     )
     parser.add_argument("--no-proxies",
         action="store_true",
-    )
-    parser.add_argument("--write-count",
-        action=BooleanOptionalAction,
-        default=True,
-        help="write item count to ITEM_DIR/.count",
+        help="don't use proxies",
     )
     parser.add_argument("--verbose",
         action="store_true",
+        help="print status for each item crawled",
     )
     parser.add_argument("--debug",
+        metavar="SELECTORS",
         type=lambda t: t.split(','),
-        default="",
+        default=[],
+        help="enable debug output (comma-separated selectors)",
     )
     parser.add_argument("collection",
         nargs="+",
+        help="names of garden collections to crawl",
     )
     opts = parser.parse_args()
+    
+    #eprint(f"{opts=}")
+    #sys.exit(1)
     
     session = CachedSession(
         cache_name="phytocodex/request-cache",
