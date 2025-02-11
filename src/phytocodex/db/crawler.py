@@ -25,6 +25,8 @@ def main():
     parser.add_argument("--no-proxies", action="store_true")
     parser.add_argument("--write-count", action=BooleanOptionalAction,
         default=True, help="write item count to ITEM_DIR/.count")
+    parser.add_argument( "--verbose", action="store_true")
+    parser.add_argument( "--debug", type=lambda t: t.split(','), default="")
     parser.add_argument("collection", nargs="+")
     opts = parser.parse_args()
     
@@ -57,13 +59,16 @@ def main():
 
 def crawl_collection(collection):
     lastpage = last_page_for_collection(collection)
-    eprint(f"{collection=} {lastpage=}")
+    if opts.verbose:
+        eprint(f"{collection=} {lastpage=}")
     item_count = 0
     for page in range(0, lastpage):
-        eprint(f"{collection=} {page=}")
+        if opts.verbose:
+            eprint(f"{collection=} {page=}")
         itempaths = item_paths_for_collection_page(collection, page)
         for itempath in itempaths:
-            eprint(f"{collection=} {page=} {itempath=}")
+            if opts.verbose:
+                eprint(f"{collection=} {page=} {itempath=}")
             save_page_for_itempath(itempath)
             item_count += 1
     return item_count
@@ -89,6 +94,9 @@ def item_paths_for_collection_page(collection, page):
 def save_page_for_itempath(itempath):
     url = f"http://macintoshgarden.org/{itempath}"
     path = opts.item_dir/f"{itempath}.html"
+    if "itempath" in opts.debug:
+        if not itempath.isascii():
+            eprint(f"non-ASCII itempath: {itempath!r}")
     assert path.resolve().is_relative_to(opts.item_dir.resolve())
     path.parent.mkdir(parents=True, exist_ok=True)
     save_content_for_request(Request("GET", url), path)
