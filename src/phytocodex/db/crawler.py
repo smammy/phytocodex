@@ -11,6 +11,7 @@ from urllib3 import Retry
 import sys
 
 retry_on_status = Retry.RETRY_AFTER_STATUS_CODES | set([500, 502, 503, 504])
+cache_expire_after = timedelta(days=1)
 
 
 def main():
@@ -30,7 +31,7 @@ def main():
     
     session = CachedSession(
         cache_name="phytocodex/request-cache",
-        expire_after=timedelta(days=7),
+        expire_after=cache_expire_after,
         cache_control=True,
         use_cache_dir=True,
     )
@@ -42,7 +43,7 @@ def main():
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     
-    #session.cache.reset_expiration(timedelta(days=7))
+    #session.cache.reset_expiration(cache_expire_after)
     #sys.exit()
     
     item_count = 0
