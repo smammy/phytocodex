@@ -22,8 +22,7 @@ def main():
     parser.add_argument("-d", "--item-dir", type=Path, default=Path("items"))
     parser.add_argument("--user-agent",
         default="Phytocodexbot/2 (sam+phyt@porcupine.club)")
-    parser.add_argument("--http-proxy", default="http://localhost:3128")
-    parser.add_argument("--https-proxy", default="http://localhost:3128")
+    parser.add_argument("--no-proxies", action="store_true")
     parser.add_argument("--write-count", action=BooleanOptionalAction,
         default=True, help="write item count to ITEM_DIR/.count")
     parser.add_argument("collection", nargs="+")
@@ -36,8 +35,9 @@ def main():
         use_cache_dir=True,
     )
     session.headers["User-Agent"] = opts.user_agent
-    session.proxies["http"] = opts.http_proxy
-    session.proxies["https"] = opts.https_proxy
+    if not opts.no_proxies:
+        session.proxies["http"] = "http://localhost:3128"
+        session.proxies["https"] = "http://localhost:3128"
     retry = Retry(status_forcelist=retry_on_status, backoff_factor=0.1)
     adapter = HTTPAdapter(max_retries=retry)
     session.mount("http://", adapter)
