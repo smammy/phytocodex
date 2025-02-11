@@ -204,22 +204,11 @@ class GopherHandler(StreamRequestHandler):
             FROM download WHERE item_path=%(path)s
         """, dict(path=item.path))
         
-        self.writeent(Ent.info("Direct HTTP (pseudo-selector) downloads:"))
         for dl in self.cur:
-            dldir = item.path.split('/')[1]
-            self.writeent(Ent.binary(
-                f"DL#{dl.number} {dl.name} ({dl.size})",
-                f"GET /sites/macintoshgarden.org/files/{dldir}/{dl.name}",
-                "macintoshgarden.org", "80",
-            ))
-        
-        self.cur.scroll(0, "absolute")
-        
-        self.writeent(Ent.info("Proxied downloads via Gopher:"))
-        for dl in self.cur:
+            self.writeent(Ent.info(f"DL#{dl.number} {dl.name} ({dl.size})"))
             ent = Ent.binhex if dl.name.endswith(".hqx") else Ent.binary
             self.writeent(ent(
-                f"DL#{dl.number} {dl.name} ({dl.size})",
+                dl.name,
                 f"{item.path}/dlproxy/{dl.number}/{dl.name}",
             ))
         
