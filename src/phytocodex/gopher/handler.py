@@ -13,15 +13,19 @@ from .data import logo, logo2, stats, textfiles
 from .menuentity import GopherEntity as Ent
 from ..config import PGURL
 
+logger = logging.getLogger(__name__)
+
 
 class GopherHandler(StreamRequestHandler):
     def handle(self):
         self.cur = psycopg.connect(
             PGURL, row_factory=psycopg.rows.namedtuple_row
         ).cursor()
-        
+
+        clienthost, clientport = self.client_address
         reqbytes = self.rfile.readline()
-        logging.debug(f"recv: “{self.nicebytes(reqbytes)}”")
+        logger.debug(f"recv: “{self.nicebytes(reqbytes)}”")
+        logger.info(f"Request from {clienthost}:{clientport} for {self.nicebytes(reqbytes)}")
         reqfields = reqbytes.rstrip().split(b"\t")
         match reqfields:
             case [selector, stuff]:
@@ -30,7 +34,7 @@ class GopherHandler(StreamRequestHandler):
                 query = None
         selector = selector.decode("ascii")
         parts = [x for x in selector.split('/') if x != ""]
-        logging.debug(f"parts: “{parts}”")
+        logger.debug(f"parts: “{parts}”")
         assert all(re.fullmatch(r"[-.0-9A-Z_a-z]+", part) for part in parts)
         match parts:
             case []:
