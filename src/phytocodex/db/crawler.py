@@ -19,15 +19,31 @@ def main():
     global session
     
     parser = ArgumentParser()
-    parser.add_argument("-d", "--item-dir", type=Path, default=Path("items"))
+    parser.add_argument("-d", "--item-dir",
+        type=Path,
+        default=Path("items"),
+    )
     parser.add_argument("--user-agent",
-        default="Phytocodexbot/2 (sam+phyt@porcupine.club)")
-    parser.add_argument("--no-proxies", action="store_true")
-    parser.add_argument("--write-count", action=BooleanOptionalAction,
-        default=True, help="write item count to ITEM_DIR/.count")
-    parser.add_argument( "--verbose", action="store_true")
-    parser.add_argument( "--debug", type=lambda t: t.split(','), default="")
-    parser.add_argument("collection", nargs="+")
+        default="Phytocodexbot/2 (sam+phyt@porcupine.club)",
+    )
+    parser.add_argument("--no-proxies",
+        action="store_true",
+    )
+    parser.add_argument("--write-count",
+        action=BooleanOptionalAction,
+        default=True,
+        help="write item count to ITEM_DIR/.count",
+    )
+    parser.add_argument("--verbose",
+        action="store_true",
+    )
+    parser.add_argument("--debug",
+        type=lambda t: t.split(','),
+        default="",
+    )
+    parser.add_argument("collection",
+        nargs="+",
+    )
     opts = parser.parse_args()
     
     session = CachedSession(
