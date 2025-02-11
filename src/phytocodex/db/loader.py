@@ -182,8 +182,13 @@ def extract_description(soup):
     html = ""
     
     elem = soup.find("div", class_="game-preview")
-    stop = elem.parent.find("strong", string="Compatibility", recursive=False)
+    stop = elem.parent.find("div", id="comments", recursive=False)
+    if opts.debug:
+        eprint(f"start elem: {elem}")
+        eprint(f"stop elem: {stop}")
     while elem := elem.next_sibling:
+        if opts.debug:
+            eprint(f"curr elem: {elem}")
         if elem == stop:
             break
         html += str(elem)
