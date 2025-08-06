@@ -19,6 +19,7 @@ import psycopg
 
 from ..config import PGURL, MGURL
 
+digitrun = re.compile(r"\d+")
 wsrun = re.compile(r"\s+")
 vsrun = re.compile(r"[\n\v\f\r\u0085\u2028\u2029]+")
 hsrun = re.compile(r"[^\S\n\v\f\r\u0085\u2028\u2029]+")
@@ -243,7 +244,10 @@ def extract_download(soup):
             raise ValueError("No div.numeral but not a purchase link")
     
     number = number.get_text()
-    assert number.startswith("#")
+    digits = digitrun.search(number)
+    if digits is None:
+        raise ValueError("No digits in div.numeral")
+    number = digits[0]
     
     atags = soup.find_all("a")
     md5 = atags.pop().get_text()
@@ -259,7 +263,7 @@ def extract_download(soup):
         raise ValueError("Missing file name or file size")
     
     return dict(
-        number=fix_space(number[1:]),
+        number=number,
         name=fix_space(name_and_size[1]),
         size=fix_space(name_and_size[2]),
         md5=fix_space(md5),
