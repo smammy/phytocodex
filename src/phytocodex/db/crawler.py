@@ -131,7 +131,13 @@ def save_page_for_itempath(itempath):
 
 def soup_for_request(request, parser="lxml"):
     response = response_for_request(request)
-    return BeautifulSoup(response.content, parser)
+    # Index pages can contain partial multi-byte UTF-8 sequences in the item
+    # description. This bamboolzes BeautifulSoup's decoder. To work around, we
+    # do a best-effort decode first, replacing malformed bytes with "�". (We
+    # don't actually use the description text, so it's no big loss.)
+    decoded_content = response.content.decode("utf-8", errors="replace")
+    soup = BeautifulSoup(decoded_content, parser)
+    return soup
 
 
 def save_content_for_request(request, path):
